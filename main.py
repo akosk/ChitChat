@@ -2,6 +2,7 @@ import os
 import discord
 from discord import app_commands
 from dotenv import load_dotenv
+import httpx  # <-- új import
 
 print(discord.__version__)
 
@@ -35,7 +36,18 @@ class MyBot(discord.Client):
 
 bot = MyBot()
 
-# GUILD-SPECIFIKUS PARANCS
+# === SEGÉDFÜGGVÉNY: VICC LEKÉRÉSE ASZINKRON HTTP-VEL ===
+async def fetch_random_joke() -> tuple[str, str]:
+    url = "https://official-joke-api.appspot.com/jokes/random"
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+        setup = data.get("setup", "Nem érkezett poén.")
+        punchline = data.get("punchline", "")
+        return setup, punchline
+
+# GUILD-SPECIFIKUS PARANCS: /repeat
 @bot.tree.command(
     name="repeat",
     description="Megismétli a szöveget",
@@ -44,5 +56,22 @@ bot = MyBot()
 @app_commands.describe(text="A megismétlendő szöveg")
 async def repeat(interaction: discord.Interaction, text: str):
     await interaction.response.send_message(f"Te ezt írtad: {text}")
+
+# GUILD-SPECIFIKUS PARANCS: /joke
+@bot.tree.command(
+    name="joke",
+    description="Random vicc az Official Joke API-ból",
+    guild=discord.Object(id=int(os.getenv("GUILD_ID")))
+)
+async def joke(interaction: discord.Interaction):
+    # jelezzük Discordnak, hogy dolgozunk (nem blokkoló várakozás jön)
+    await interaction.response.defer(thinking=True)
+
+    try:
+        setup, punchline = await fetch_random_joke()
+        # punchline spoiler tagben, hogy kattintani kelljen
+        await interaction.followup.send(f"{setup}\n||{punchline}||")
+    except Exception as e:
+        await interaction.followup.send("Hiba történt a vicc lekérésekor. Próbáld meg később újra.")
 
 bot.run(TOKEN)
