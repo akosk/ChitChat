@@ -1,2 +1,2 @@
-﻿discord.py>=2.6.0,<3.0
+discord.py>=2.6.0,<3.0
 python-dotenv>=1.0.0,<2.0.0
