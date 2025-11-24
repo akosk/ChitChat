@@ -3,6 +3,7 @@ import discord
 from discord import app_commands
 from dotenv import load_dotenv
 import httpx  # <-- új import
+import random
 
 print(discord.__version__)
 
@@ -74,13 +75,18 @@ async def joke(interaction: discord.Interaction):
     except Exception as e:
         await interaction.followup.send("Hiba történt a vicc lekérésekor. Próbáld meg később újra.")
 
+
+
 @bot.tree.command(
     name="cat",
     description="Random macskakép",
     guild=discord.Object(id=int(os.getenv("GUILD_ID")))
 )
 async def cat(interaction: discord.Interaction):
-    await interaction.response.send_message("Random macska:\nhttps://cataas.com/cat")
+    # random query param to avoid caching
+    url = f"https://cataas.com/cat?random={random.randint(1,10_000_000)}"
+    await interaction.response.send_message(url)
+
 
 
 bot.run(TOKEN)
