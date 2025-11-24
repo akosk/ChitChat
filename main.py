@@ -83,9 +83,10 @@ async def joke(interaction: discord.Interaction):
     guild=discord.Object(id=int(os.getenv("GUILD_ID")))
 )
 async def cat(interaction: discord.Interaction):
-    # random query param to avoid caching
     url = f"https://cataas.com/cat?random={random.randint(1,10_000_000)}"
-    await interaction.response.send_message(url)
+    embed = discord.Embed(title="Random Cat")
+    embed.set_image(url=url)
+    await interaction.response.send_message(embed=embed)
 
 
 
