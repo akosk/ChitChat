@@ -77,16 +77,35 @@ async def joke(interaction: discord.Interaction):
 
 
 
+
 @bot.tree.command(
     name="cat",
     description="Random macskakép",
     guild=discord.Object(id=int(os.getenv("GUILD_ID")))
 )
 async def cat(interaction: discord.Interaction):
-    url = f"https://cataas.com/cat?random={random.randint(1,10_000_000)}"
+    await interaction.response.defer(thinking=True)
+
+    # cache-busting query param, hogy biztosan új képet kérjünk a CATAAS-tól
+    url = f"https://cataas.com/cat?random={random.randint(1, 10_000_000)}"
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            image_bytes = resp.content
+    except Exception as e:
+        await interaction.followup.send("Nem sikerült macskát letölteni. Próbáld meg később.")
+        return
+
+    # BytesIO-ból Discord fájl
+    file = discord.File(io.BytesIO(image_bytes), filename="cat.png")
+
+    # opcionálisan embedben is megjeleníthető
     embed = discord.Embed(title="Random Cat")
-    embed.set_image(url=url)
-    await interaction.response.send_message(embed=embed)
+    embed.set_image(url="attachment://cat.png")
+
+    await interaction.followup.send(embed=embed, file=file)
 
 
 
