@@ -77,18 +77,22 @@ async def ask_gpt(prompt: str) -> str:
     """
     Call OpenAI Responses API with gpt-5.1 and return plain text only.
     """
-    response = await openai_client.responses.create(
-        model="gpt-5.1",
-        # simple text input is fine for a Discord command
-        input=prompt,
-        # force text output so we always get a message item (important for GPT-5.x)
-        text={"format": {"type": "text"}},
-        max_output_tokens=512,
-    )
-
-    # `output_text` is a convenience helper that concatenates all text content
-    text = response.output_text or ""
-    return text.strip()
+    print("ask_gpt: prompt =", prompt)
+    try:
+        response = await openai_client.responses.create(
+            model="gpt-5.1",
+            # simple text input is fine for a Discord command
+            input=prompt,
+            # force text output so we always get a message item (important for GPT-5.x)
+            text={"format": {"type": "text"}},
+            max_output_tokens=512,
+        )
+        # `output_text` is a convenience helper that concatenates all text content
+        text = response.output_text or ""
+        return text.strip()
+    except Exception as e:
+        print(f"[ERROR] ask_gpt failed: {type(e).__name__}: {e}")
+        raise
 
 # GUILD-SPECIFIKUS PARANCS: /repeat
 @bot.tree.command(
