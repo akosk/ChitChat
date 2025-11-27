@@ -36,6 +36,25 @@ class MyBot(discord.Client):
         for g in self.guilds:
             print(" ", g.name, g.id)
 
+    async def on_message(self, message: discord.Message):
+        # ignore the bot's own messages to avoid loops
+        if message.author == self.user:
+            return
+
+        # 1) "Subscribe" behavior: you see every message here
+        print(f"[on_message] #{message.channel} | {message.author}: {message.content}")
+
+        # 2) Example: simple keyword reaction
+        if message.content.lower().startswith("ping"):
+            await message.channel.send("pong")
+
+        # 3) Example: react with an emoji
+        if "macska" in message.content.lower():
+            try:
+                await message.add_reaction("🐱")
+            except discord.HTTPException:
+                pass
+
 bot = MyBot()
 
 # === SEGÉDFÜGGVÉNY: VICC LEKÉRÉSE ASZINKRON HTTP-VEL ===
