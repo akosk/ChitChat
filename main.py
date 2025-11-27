@@ -78,11 +78,12 @@ async def ask_gpt(prompt: str) -> str:
     Call OpenAI Responses API with gpt-5.1 and return plain text only.
     """
     print("ask_gpt: prompt =", prompt)
+    enhanced_prompt = f"{prompt}\n\nPlease provide a concise answer."
     try:
         response = await openai_client.responses.create(
             model="gpt-5.1",
             # simple text input is fine for a Discord command
-            input=prompt,
+            input=enhanced_prompt,
             # force text output so we always get a message item (important for GPT-5.x)
             text={"format": {"type": "text"}},
             max_output_tokens=512,
