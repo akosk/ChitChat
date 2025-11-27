@@ -14,6 +14,8 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 print("GUILD_ID from .env:", GUILD_ID)
 
 intents = discord.Intents.default()
+intents.message_content = True
+
 
 class MyBot(discord.Client):
     def __init__(self):
