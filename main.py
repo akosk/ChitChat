@@ -62,6 +62,7 @@ class MyBot(discord.Client):
 
         # 4) Moderation check with omni-moderation-latest
         content = (message.content or "").strip()
+        print("[on_message] Checking moderation for content:", repr(content))
         if not content:
             return  # ignore purely empty messages
 
@@ -69,6 +70,7 @@ class MyBot(discord.Client):
         if moderation_result is None:
             return  # fail-open: if moderation fails, do nothing extra
 
+        print ("[on_message] Moderation result:", moderation_result)
         # moderation_result.flagged is True if anything is over threshold
         if getattr(moderation_result, "flagged", False):
             # Ask GPT to rephrase the message politely
