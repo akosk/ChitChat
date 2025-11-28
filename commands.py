@@ -92,7 +92,7 @@ def register_commands(bot):
         description="Friss virális mémek az utóbbi 2 hétből",
         guild=discord.Object(id=GUILD_ID)
     )
-    async def memes(interaction: discord.Interaction):
+    async def memes(interaction: discord.Interaction, days_back: int=14, max_memes: int=8):
         await interaction.response.defer(thinking=True)
 
         # API URL – ha kell, állíthatod env-ben: MEME_API_URL
@@ -100,7 +100,7 @@ def register_commands(bot):
 
         try:
             async with httpx.AsyncClient(timeout=180.0) as client:
-                resp = await client.get(api_url, params={"days_back": 14, "max_memes": 8})
+                resp = await client.get(api_url, params={"days_back": days_back, "max_memes": max_memes})
                 resp.raise_for_status()
                 data = resp.json()
         except Exception:
