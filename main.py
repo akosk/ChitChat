@@ -60,6 +60,42 @@ class MyBot(discord.Client):
             except discord.HTTPException:
                 pass
 
+        # 4) Moderation check with omni-moderation-latest
+        content = (message.content or "").strip()
+        if not content:
+            return  # ignore purely empty messages
+
+        moderation_result = await check_moderation(content)
+        if moderation_result is None:
+            return  # fail-open: if moderation fails, do nothing extra
+
+        # moderation_result.flagged is True if anything is over threshold
+        if getattr(moderation_result, "flagged", False):
+            # Ask GPT to rephrase the message politely
+            try:
+                polite_rephrase = await ask_gpt(
+                    "Rewrite the following Discord message to be polite, "
+                    "respectful, and non-offensive, keeping the same meaning. "
+                    "Only return the rewritten sentence.\n\n"
+                    f"Original: {content}"
+                )
+            except Exception:
+                # If GPT fails, send a simple warning only
+                await message.reply(
+                    f"{message.author.mention} Ez nem volt túl kedves. "
+                    "Kérlek, fogalmazd át szebben."
+                )
+                return
+
+            # Reply to the user with a warning + suggested rephrase
+            # (Hungarian text to match your existing style)
+            warn_text = (
+                f"{message.author.mention} Ez nem volt túl kedves. "
+                "Így lehetne szebben mondani:\n"
+                f"> {polite_rephrase}"
+            )
+            await message.reply(warn_text)
+
 bot = MyBot()
 
 # === SEGÉDFÜGGVÉNY: VICC LEKÉRÉSE ASZINKRON HTTP-VEL ===
@@ -94,6 +130,24 @@ async def ask_gpt(prompt: str) -> str:
     except Exception as e:
         print(f"[ERROR] ask_gpt failed: {type(e).__name__}: {e}")
         raise
+
+async def check_moderation(text: str):
+    """
+    Use omni-moderation-latest to check if text is harmful/vulgar.
+    Returns the first moderation result, or None on error.
+    """
+    try:
+        resp = await openai_client.moderations.create(
+            model="omni-moderation-latest",
+            input=text,
+        )
+        # resp.results is a list; we only care about the first one
+        if not resp.results:
+            return None
+        return resp.results[0]
+    except Exception as e:
+        print(f"[ERROR] moderation failed: {type(e).__name__}: {e}")
+        return None
 
 # GUILD-SPECIFIKUS PARANCS: /repeat
 @bot.tree.command(
