@@ -53,12 +53,35 @@ async def ask_gpt(prompt: str) -> str:
 async def check_moderation(text: str):
     """
     Use omni-moderation-latest to check if text is harmful/vulgar.
+    Translates text to English first for better accuracy.
     Returns the first moderation result, or None on error.
     """
     try:
+        # First, translate to English using a cheaper model (gpt-4o-mini)
+        print("[check_moderation] Translating text to English...")
+        translation_response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a translator. Translate the following text to English. If it's already in English, return it unchanged. Only return the translation, nothing else."
+                },
+                {
+                    "role": "user",
+                    "content": text
+                }
+            ],
+            max_tokens=200,
+            temperature=0.3
+        )
+
+        english_text = translation_response.choices[0].message.content.strip()
+        print(f"[check_moderation] Translated text: {english_text}")
+
+        # Now run moderation on the English text
         resp = await openai_client.moderations.create(
             model="omni-moderation-latest",
-            input=text,
+            input=english_text,
         )
         # resp.results is a list; we only care about the first one
         if not resp.results:
